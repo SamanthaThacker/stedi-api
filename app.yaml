@@ -63,26 +63,38 @@ spec:
 # periodSeconds tells Kubernetes how often to check health            
             periodSeconds: 3
 ---
-# apiVersion tells kubernetes which version of yaml to use
-apiVersion: v1
-#kind tells kubernetes what kind of object to create
-kind: Service
-#metadata contains attributes about the object
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-#name is the name of the object we are creating
-  name: stedi-thacker-loadbalancer
-#spec is the specification of the object (or the loadbalancer)
+  name: stedi-ingress-thacker
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: stedi-public-thacker
+    networking.gke.io/managed-certificates: stedi-certificate-thacker
+    kubernetes.io/ingress.allow-http: "false"
+    kubernetes.io/ingress.class: "gce"
 spec:
-  #selector tells the network layer how to find the right pod
+  defaultBackend:
+    service:
+      name: stedi-nodeport-thacker
+      port:
+        number: 80
+---
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: sted-certificate-thacker
+spec:
+  domains:
+      - thackerstedi.cit262.com
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stedi-nodeport-thacker
+spec:
   selector:
-#app tells the selector which app to send traffic to
     app: stedi-thacker
-#type of kubernetes the type of service we want
-#a Loadbalancer distributes network packets to 1 + pods
-  type: LoadBalancer
-#ports are a list of ports the Loadbalancer listens on
+  type: NodePort
   ports:
-#poet is the port we want to listen on the network
     - port: 80
-#targetport is the port the pod listens on inside Kubernetes
       targetPort: 4567
