@@ -1,22 +1,68 @@
-package com.getsimplex.steptimer.model;
+//© 2021 Sean Murdock
 
-public class TextMessage {
-    private String phoneNumber;
-    private String message;
+package com.getsimplex.steptimer.utils;
 
-    public String getPhoneNumber() {
-        return phoneNumber;
+import com.getsimplex.steptimer.model.TextMessage;
+import com.google.gson.Gson;
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
+import com.google.i18n.phonenumbers.Phonenumber;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
+
+public class SendText {
+    private static String AUTH_TOKEN = "";
+
+    // This is a slightly tweaked version of this program  that doesn't call Twilio Directly - so we don't need to give out Twilio Tokens
+
+    static {
+
+        AUTH_TOKEN = System.getenv("TWILIO_AUTH_TOKEN");
     }
 
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
+    public static void send(String destinationPhone, String text) throws Exception{
+
+        Gson gson = new Gson();
+        String formattedPhone = getFormattedPhone(destinationPhone);
+
+        TextMessage textMessage = new TextMessage();
+        textMessage.setMessage(text);
+        textMessage.setPhoneNumber(formattedPhone);
+
+//        HttpClient httpClient = new HttpClient();
+//
+//        Request request = httpClient.POST("https://dev.stedi.me/sendtext");//this url only allows a user to text themselves using their own token
+//        request.header(HttpHeader.ACCEPT,"application/json");
+//        request.header(HttpHeader.CONTENT_TYPE,"application/json");
+//        request.header("suresteps.session.token",AUTH_TOKEN);
+//
+
+//
+//        request.content(new StringContentProvider(gson.toJson(textMessage)),"application/json");
+//        request.send();
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI("https://dev.stedi.me/sendtext"))
+                .headers("Content-Type", "application/json;charset=UTF-8")
+                .headers("suresteps.session.token",AUTH_TOKEN)
+                .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(textMessage)))
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        System.out.println("Send Text response: "+response.statusCode());
+
     }
 
-    public String getMessage() {
-        return message;
+    public static String getFormattedPhone(String inputPhone) throws Exception{
+        PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
+        Phonenumber.PhoneNumber phoneNumber = phoneUtil.parse(inputPhone, "US");
+        String formattedPhone = phoneUtil.format(phoneNumber, PhoneNumberUtil.PhoneNumberFormat.INTERNATIONAL);
+        formattedPhone = formattedPhone.replace(" ","");
+        return formattedPhone;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
-    }
 }
