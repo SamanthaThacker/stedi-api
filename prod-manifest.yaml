@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: prod-stedi-samantha
-          image: gcr.io/cubs-consulting/stedi #This image needs to refer to the NEW artifact registry repo that we need to create
+          image: us-docker.pkg.dev/group3-iam-project/samantha-api/stedi-api:latest #This image needs to refer to the NEW artifact registry repo that we need to create
           env:
             - name: REDIS_PASSWORD
               valueFrom:
